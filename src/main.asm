@@ -1,19 +1,55 @@
 [org 0x7C00] ; BIOS loads the boot sector at 0x7C00
 [bits 16] ; 16-bit code
 
+%define ENDL 0x0D, 0x0A
+
 start:
-    mov ah, 0x0e         ; BIOS function for teletype output
-    mov al, 'H'          ; Character to print
-    int 0x10             ; Call BIOS interrupt
-    mov al, 'i'          ; Next character
-    int 0x10             ; Call BIOS interrupt
+    jmp main
 
-hang:
-    jmp hang             ; Infinite loop to keep the system from crashing
+puts:
+    push si
+    push ax
 
-times 510 - ($ - $$) db 0  ; Pad the rest of the boot sector to 510 bytes
-dw 0xAA55                  ; Boot signature
+.loop:
+    lodsb
+    or al, al
+    jz .done
 
+    mov ah, 0x0E
+    int 0x10
+
+    jmp .loop
+
+
+.done:
+    pop ax
+    pop si
+    ret
+
+
+main:
+    ; Set data segment registers
+    mov ax, 0
+    mov ds, ax
+    mov es, ax
+
+    ; set up stack
+    mov ss, ax
+    mov sp, 0x7C00 ; stack grows downwards
+
+    mov si, msg_hello
+    call puts
+
+    hlt
+
+.halt:
+    jmp .halt
+
+msg_hello: db "Hello, World!", ENDL, 0
+
+
+times 510-($-$$) db 0 ; Fill the rest of the sector with 0s
+dw 0AA55h 
 
 
 
